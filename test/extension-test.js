@@ -1236,3 +1236,162 @@ describe("Thenables should not be able to run code during assimilation", functio
         assert.strictEqual(thenCalled, false);
     });
 });
+
+// Ported from RSVP
+describe("Promise.onerror", function(){
+  var onerror;
+
+  afterEach(function() {
+    Promise.onerror = function(){};
+  });
+
+  it("When provided, any unhandled exceptions are sent to it (false positive case)", function(done) {
+    var thrownError = new Error();
+
+    Promise.onerror = function(error) {
+      assert.equal(error, thrownError, "The thrown error is passed in");
+      done();
+    };
+
+    new Promise(function(resolve, reject) {
+      reject(thrownError);
+    }).then(function() {
+      // doesn't get here
+      assert(false);
+    });
+  });
+
+  it("When provided, handled exceptions are not sent to it", function(done) {
+    var thrownError = new Error();
+
+    Promise.onerror = function(error) {
+      assert(false, "Should not get here");
+    };
+
+    new Promise(function(resolve, reject) {
+      reject(thrownError);
+    }).then(null, function(error) {
+      assert.equal(error, thrownError, "The handler should handle the error");
+      done();
+    });
+  });
+
+  it("Enumerator: When provided, any unhandled exceptions are sent to it", function(done) {
+    var thrownError = new Error();
+
+    Promise.onerror = function(error) {
+      assert.equal(error, thrownError, "The thrown error is passed in");
+      done();
+    };
+
+    var promise = new Promise(function(resolve, reject) {
+      reject(thrownError);
+    });
+
+    Promise.all([promise]).then(function() {
+      // doesn't get here
+      assert(false);
+    });
+  });
+
+  it("all When provided, handled exceptions are not sent to it", function(done) {
+    var thrownError = new Error();
+
+    Promise.onerror = function(error) {
+      assert(false, "Should not get here");
+    };
+
+    var promise = new Promise(function(resolve, reject) {
+      reject(thrownError);
+    });
+
+    Promise.all([promise]).then(undefined, function(reason) {
+      assert.equal(reason, thrownError, "The handler should handle the error");
+      done();
+    });
+  });
+
+  it("assimilation: When provided, handled exceptions are not sent to it", function(done) {
+    var thrownError = new Error();
+
+    Promise.onerror = function(error) {
+      assert(false, "Should not get here");
+    };
+
+    Promise.resolve().then(function(){
+      return Promise.reject(thrownError);
+    }).then(undefined, function(reason) {
+      assert.equal(reason, thrownError, "The handler should handle the error");
+      done();
+    });
+  });
+
+  it("zalgo: When provided, unhandled exceptions are sent to it", function(done) {
+    var thrownError = new Error();
+
+    Promise.onerror = function(error) {
+      assert(true, "should also have emitted onerror");
+      assert.equal(error, thrownError, "The handler should handle the error");
+      done();
+    };
+
+    var rejected = Promise.reject(thrownError);
+
+    Promise.resolve().then(function(){
+      return rejected;
+    });
+  });
+
+  it("assimilation: When provided, unhandled exceptions are sent to it", function(done) {
+    var thrownError = new Error();
+
+    Promise.onerror = function(error) {
+      assert(true, "Should get here once");
+      done();
+    };
+
+    var promise = new Promise(function(resolve, reject) {
+      reject(thrownError);
+    });
+
+    Promise.resolve().then(function(){
+      return promise;
+    });
+  });
+
+  it("When provided, any unhandled exceptions are sent to it, even from inside error handlers", function(done) {
+    var firstError = new Error();
+    var secondError = new Error();
+
+    Promise.onerror = function(reason) {
+      assert.equal(reason, secondError, "The thrown error is passed in");
+      done();
+    };
+
+    new Promise(function(resolve, reject) {
+      reject(firstError);
+    }).catch(function(err) {
+      assert.equal(err, firstError, "The first error is handled");
+      return new Promise(function(resolve, reject) {
+        reject(secondError);
+      });
+    });
+  });
+
+  it('does not emit if handled by the end of the current turn', function(done){
+    var rejectionCount = 0;
+    var reason = new Error('Rejection Reason');
+
+    Promise.onerror = function(event){
+      assert(false, 'should not have errored');
+      done();
+    };
+
+    var promise = Promise.reject(reason);
+    Promise.resolve().then(function() {
+      promise.catch(function() {
+        done();
+      });
+    });
+  });
+});

@@ -3,7 +3,7 @@
  * @copyright Copyright (c) 2014 Yehuda Katz, Tom Dale, Stefan Penner and contributors (Conversion to ES6 API by Jake Archibald)
  * @license   Licensed under MIT license
  *            See https://raw.githubusercontent.com/stefanpenner/es6-promise/master/LICENSE
- * @version   4.0.5
+ * @version   4.0.5+6d84d7f6
  */
 
 (function (global, factory) {
@@ -161,6 +161,8 @@ function then(onFulfillment, onRejection) {
 
   var parent = this;
 
+  parent._onerror = null;
+
   var child = new this.constructor(noop);
 
   if (child[PROMISE_ID] === undefined) {
@@ -295,6 +297,7 @@ function handleOwnThenable(promise, thenable) {
   if (thenable._state === FULFILLED) {
     fulfill(promise, thenable._result);
   } else if (thenable._state === REJECTED) {
+    thenable._onerror = null;
     _reject(promise, thenable._result);
   } else {
     subscribe(thenable, undefined, function (value) {
@@ -532,6 +535,7 @@ Enumerator.prototype._eachEntry = function (entry, i) {
     var _then = getThen(entry);
 
     if (_then === then && entry._state !== PENDING) {
+      entry._onerror = null;
       this._settledAt(entry._state, i, entry._result);
     } else if (typeof _then !== 'function') {
       this._remaining--;
@@ -1111,6 +1115,16 @@ Promise.prototype = {
   */
   'catch': function _catch(onRejection) {
     return this.then(null, onRejection);
+  },
+
+  // Ported from RSVP.js
+  _onerror: function _onerror(reason) {
+    var promise = this;
+    setTimeout(function () {
+      if (promise._onerror && typeof Promise.onerror === 'function') {
+        Promise.onerror(reason);
+      }
+    }, 0);
   }
 };
 
