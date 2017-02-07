@@ -7,11 +7,8 @@
  * @version   4.0.5+fd5149c8
  */
 
-(function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
-    typeof define === 'function' && define.amd ? define(factory) :
-    (global.ES6Promise = factory());
-}(this, (function () { 'use strict';
+var Promise = (function () {
+'use strict';
 
 function objectOrFunction(x) {
   return typeof x === 'function' || typeof x === 'object' && x !== null;
@@ -1184,44 +1181,6 @@ Promise.prototype = {
   }
 };
 
-function polyfill() {
-    var local = undefined;
-
-    if (typeof global !== 'undefined') {
-        local = global;
-    } else if (typeof self !== 'undefined') {
-        local = self;
-    } else {
-        try {
-            local = Function('return this')();
-        } catch (e) {
-            throw new Error('polyfill failed because global object is unavailable in this environment');
-        }
-    }
-
-    var P = local.Promise;
-
-    if (P) {
-        var promiseToString = null;
-        try {
-            promiseToString = Object.prototype.toString.call(P.resolve());
-        } catch (e) {
-            // silently ignored
-        }
-
-        if (promiseToString === '[object Promise]' && !P.cast) {
-            return;
-        }
-    }
-
-    local.Promise = Promise;
-}
-
-// Strange compat..
-Promise.polyfill = polyfill;
-Promise.Promise = Promise;
-
 return Promise;
 
-})));
-//# sourceMappingURL=es6-promise.map
+}());//# sourceMappingURL=es6-promise-polyfill.map

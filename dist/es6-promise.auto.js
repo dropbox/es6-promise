@@ -4,7 +4,7 @@
  * @license   Licensed under MIT license
  *            See https://raw.githubusercontent.com/stefanpenner/es6-promise/master/LICENSE
  * @repo      https://github.com/dropbox/es6-promise
- * @version   4.0.5+7b4bf22a
+ * @version   4.0.5+fd5149c8
  */
 
 (function (global, factory) {

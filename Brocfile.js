@@ -94,11 +94,35 @@ function development(dist, header) {
   return concatAs(dist, 'es6-promise.js');
 }
 
+// Unconditional polyfill build
+var polyfillDist = new Rollup(es5, {
+  rollup: {
+    entry: 'lib/es6-promise/promise.js',
+    targets: [
+      {
+        format: 'iife',
+        moduleName: 'Promise',
+        dest: 'es6-promise-polyfill.js',
+      }
+    ]
+  }
+});
+
+var es6PromisePolyfill = function (polyfillDist, header) {
+  return concat(merge([polyfillDist, header]), {
+    headerFiles: ['config/versionTemplate.txt'],
+    inputFiles:  ['es6-promise-polyfill.js'],
+    outputFile: 'es6-promise-polyfill.js'
+  });
+}
+
 module.exports = merge([
   merge([
     production(es6Promise, header),
     development(es6Promise, header),
   ].filter(Boolean)),
+  // polyfill
+  es6PromisePolyfill(polyfillDist, header),
   // test stuff
   testFiles,
   testVendor,
